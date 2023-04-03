@@ -129,6 +129,9 @@ dmypy.json
 .pyre/
 
 # home
-.faa
-.msa
+*.faa
+*.msa
 /test
+*.parquet
+*.afa
+*.fasta
