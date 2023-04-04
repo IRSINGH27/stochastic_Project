@@ -1,4 +1,8 @@
 import numpy as np
+def dnorm(x,mu,sd):
+    a=1/(sd*(np.sqrt(2*np.pi)))
+    b=-1*((x-mu)**2)/(2*(sd**2))
+    return a*np.exp(b)
 class Simulation():
     def __init__(self,p=0.2,q=0.3) -> None:
         assert 1-(2*p)-q>=0, 'Sum of proability is not 1'
@@ -15,13 +19,14 @@ class Simulation():
         for time_point in range(gen_time):
             _temp=population[:,time_point]
             choosen_one=np.random.choice(_temp,size=round((percent_population/100)*each_gen),replace=True)
-            # min_length=min([len(i) for i in choosen_one])
-            # max_length=max([len(i) for i in choosen_one])
+            gc_=np.vectorize(lambda x:(x.count('g')+x.count('c'))/len(x))(choosen_one)
+            gc_=np.mean(gc_)
             childs=np.array([],dtype=object)
             for each_one in choosen_one:
                 seq=self.reproduce(offspring=offspring,each_one=each_one,percent_mutation=percent_mutation)
                 childs=np.append(childs,seq)
-            childs=np.random.choice(childs,size=each_gen,replace=True)
+            p_=self.fitness_function(childrens=childs,gc_parent=gc_)
+            childs=np.random.choice(childs,size=each_gen,replace=True,p=p_)
             childs=np.reshape(childs,(each_gen,1))
             population=np.append(population,childs,axis=1)
         return population
@@ -70,20 +75,23 @@ class Simulation():
             results=np.append(results,seq)
         return results
                     
-    def fitness_function(self,childrens,p_max):
-        from Bio.Seq import Seq
-        p_max=p_max//3-1
-        childrens=np.vectorize(lambda x: Seq(x).translate())(childrens)
-        childrens=np.vectorize(lambda x:x[:x.find('*')])(childrens)
-        pass
-        return None
+    def fitness_function(self,childrens,gc_parent):
+        diff_=np.vectorize(lambda x: ((x.count('g')+x.count('c'))/len(x))-gc_parent)(childrens)
+        mu=np.mean(diff_)
+        sd=np.std(diff_)
+        if sd!=0:
+            p_=np.vectorize(dnorm)(diff_,mu,sd)
+        else:
+            p_=np.vectorize(dnorm)(diff_,mu,1)
+        p_=np.vectorize(lambda x:x/sum(p_))(p_)
+        return p_
 
 def main(p:float,q:float,i:int):
     import pandas as pd
     from Bio.Seq import Seq
     seq='atgcctaagtacctgccccctgacgccctcgtcgctctcatcaacaaggagttcggggccaacacgctcgtgcgcgcgaaggatgctgtcggcctcgtgaagccgcgcctgtctacaggttcctttgctctcgaccttcagctcggcggtggcttccccgaaggtgccatcactctgctcgaaggcgacaagggctcgtcaaagagctggaccatgaacaccatggccgcgatgttcctccagacgcacaagaacggtgtgttcatcctggtgaatgccgaaggcaccaacgaccacctgttcctcgaatcgctcggcgtcgataccgcgcgcaccttcttcctccagcccgagtcaggcgagcaggcctgggacgctgccatcaaagctgcgcagttcgctgagaaggtcttcatcggcgtcgattcgctcgatgcctgtgtgccgctcacggaacttgaaggagacgtgggcgatgccaagtacgcccctgccgccaagatgaacaacaagggcttccgcaagctcatctcggccatgaagcctgacctgaccagcacggatcagcgcgtcactgccgtgttcatcacccagctccgcgaagccatcggcgtcatgttcggtgatccgaagcgcagcgtcggtggcatgggcaaggcgttcgccgccatgaccatcatccgcctgtcgcgcatcaaggtgctgcgcaccgagggtgacaccgtcgctgaaaagaagagctacggcctggagatcgaggcgcacatcaccaagaacaagggatggggcgaaggcgaaaaggtgaagtggaccctctacaaagagaatcatgagggcttccgccgtggccagatcgacaacgtcaccgagctgattccgttcctgctcgtctacaagatcgcagacaagaagggtgcgtggatcaccctcggcaccgaccagtaccagggcgacaaggacctcgccgcccagctccgcatcaacgatgagctgcgggcgtggtgcatcgcccaggtgaaggaggcccacgccaagcgctacgagatgcaggaggaagtccctgccccgacgccgtccatcgtcaacaaaggcacctcggcgctgaagcgcctgcccaagaaaggcaagtaa'
     x=Simulation(p=p,q=q)
-    y=x.worker(seq_input=seq,each_gen=10000,offspring=100000,gen_time=10,percent_mutation=1)
+    y=x.worker(seq_input=seq,each_gen=1000,offspring=10000,gen_time=10,percent_mutation=1,percent_population=20)
     results=pd.DataFrame.from_records(y)
     results.columns=[f'Gen_{i}' for i in results.columns]
     results.index=[f'org_{i}' for i in results.index]
@@ -92,13 +100,6 @@ def main(p:float,q:float,i:int):
     results2=results_protein.applymap(lambda x:len(x))
     results_protein=results_protein.astype(str)
     results=results.astype(str)
-    results.to_parquet(f'{i}.result.parquet')
-    results_protein.to_parquet(f'{i}.result_protein.parquet')
-    results2.to_parquet(f'{i}_result2.parquet')
-
-
-
-    
-            
-
-
+    results.to_parquet(f'{i}.result1.parquet')
+    results_protein.to_parquet(f'{i}.result_protein1.parquet')
+    results2.to_parquet(f'{i}_result21.parquet')

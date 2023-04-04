@@ -131,7 +131,18 @@ dmypy.json
 # home
 *.faa
 *.msa
+*.mfa
 /test
 *.parquet
 *.afa
 *.fasta
+*.bionj
+*.gz
+*.mldist
+*.efa
+*.txt
+*.treefile
+*.contree
+*.iqtree
+*.splits.nex
+*.state
