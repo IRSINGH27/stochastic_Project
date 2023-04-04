@@ -83,15 +83,17 @@ def main(p:float,q:float,i:int):
     from Bio.Seq import Seq
     seq='atgcctaagtacctgccccctgacgccctcgtcgctctcatcaacaaggagttcggggccaacacgctcgtgcgcgcgaaggatgctgtcggcctcgtgaagccgcgcctgtctacaggttcctttgctctcgaccttcagctcggcggtggcttccccgaaggtgccatcactctgctcgaaggcgacaagggctcgtcaaagagctggaccatgaacaccatggccgcgatgttcctccagacgcacaagaacggtgtgttcatcctggtgaatgccgaaggcaccaacgaccacctgttcctcgaatcgctcggcgtcgataccgcgcgcaccttcttcctccagcccgagtcaggcgagcaggcctgggacgctgccatcaaagctgcgcagttcgctgagaaggtcttcatcggcgtcgattcgctcgatgcctgtgtgccgctcacggaacttgaaggagacgtgggcgatgccaagtacgcccctgccgccaagatgaacaacaagggcttccgcaagctcatctcggccatgaagcctgacctgaccagcacggatcagcgcgtcactgccgtgttcatcacccagctccgcgaagccatcggcgtcatgttcggtgatccgaagcgcagcgtcggtggcatgggcaaggcgttcgccgccatgaccatcatccgcctgtcgcgcatcaaggtgctgcgcaccgagggtgacaccgtcgctgaaaagaagagctacggcctggagatcgaggcgcacatcaccaagaacaagggatggggcgaaggcgaaaaggtgaagtggaccctctacaaagagaatcatgagggcttccgccgtggccagatcgacaacgtcaccgagctgattccgttcctgctcgtctacaagatcgcagacaagaagggtgcgtggatcaccctcggcaccgaccagtaccagggcgacaaggacctcgccgcccagctccgcatcaacgatgagctgcgggcgtggtgcatcgcccaggtgaaggaggcccacgccaagcgctacgagatgcaggaggaagtccctgccccgacgccgtccatcgtcaacaaaggcacctcggcgctgaagcgcctgcccaagaaaggcaagtaa'
     x=Simulation(p=p,q=q)
-    y=x.worker(seq_input=seq,each_gen=100,offspring=1000,gen_time=10,percent_mutation=1)
+    y=x.worker(seq_input=seq,each_gen=10000,offspring=100000,gen_time=10,percent_mutation=1)
     results=pd.DataFrame.from_records(y)
     results.columns=[f'Gen_{i}' for i in results.columns]
     results.index=[f'org_{i}' for i in results.index]
-    results=results.applymap(lambda x:Seq(x).translate())
-    results=results.applymap(lambda x:x[:x.find('*')])
-    results2=results.applymap(lambda x:len(x))
+    results_protein=results.applymap(lambda x:Seq(x).translate())
+    results_protein=results_protein.applymap(lambda x:x[:x.find('*')])
+    results2=results_protein.applymap(lambda x:len(x))
+    results_protein=results_protein.astype(str)
     results=results.astype(str)
     results.to_parquet(f'{i}.result.parquet')
+    results_protein.to_parquet(f'{i}.result_protein.parquet')
     results2.to_parquet(f'{i}_result2.parquet')
 
 
