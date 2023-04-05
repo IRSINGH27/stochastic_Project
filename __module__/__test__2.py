@@ -1,18 +1,21 @@
 import numpy as np
-def dnorm(x,mu,sd):
+def dnorm(x,mu,sd)->np.float64:
     a=1/(sd*(np.sqrt(2*np.pi)))
     b=-1*((x-mu)**2)/(2*(sd**2))
     return a*np.exp(b)
 class Simulation():
     def __init__(self,p=0.2,q=0.3) -> None:
         assert 1-(2*p)-q>=0, 'Sum of proability is not 1'
-        self.subsitute_dict={'a':{'a':1-(2*p)-q,'t':p,'g':q,'c':p},
+        self.subsitute_dict={
+        'a':{'a':1-(2*p)-q,'t':p,'g':q,'c':p},
         't':{'a':p,'t':1-(2*p)-q,'g':p,'c':q},
         'g':{'a':q,'t':p,'g':1-(2*p)-q,'c':p},
-        'c':{'a':p,'t':q,'g':p,'c':1-(2*p)-q}}
+        'c':{'a':p,'t':q,'g':p,'c':1-(2*p)-q}
+        }
         # self.indel={'insert':{'a':((1/3)/2)/4,'t':((1/3)/2)/4,'g':((1/3)/2)/4,'c':((1/3)/2)/4},'del':{'a':((1/3)/2)/4,'t':((1/3)/2)/4,'g':((1/3)/2)/4,'c':((1/3)/2)/4,},'None':2/3}
         self.np_round=np.vectorize(lambda x:round(x))
         self._nt_selector=np.vectorize(lambda x,y:x[y])
+        return None
 
     def worker(self,seq_input:str,each_gen:int,offspring:int,gen_time:int,percent_mutation:float,percent_population=5) -> np.array:
         population=np.full(shape=(each_gen,1),fill_value=seq_input,dtype=object)
@@ -31,7 +34,7 @@ class Simulation():
             population=np.append(population,childs,axis=1)
         return population
 
-    def reproduce(self,offspring,each_one,percent_mutation):
+    def reproduce(self,offspring,each_one,percent_mutation) ->np.array:
         results=np.array([],dtype=object)
         for _ in range(offspring):
             seq=each_one[3:-3]
@@ -75,7 +78,7 @@ class Simulation():
             results=np.append(results,seq)
         return results
                     
-    def fitness_function(self,childrens,gc_parent):
+    def fitness_function(self,childrens,gc_parent) ->np.array:
         diff_=np.vectorize(lambda x: ((x.count('g')+x.count('c'))/len(x))-gc_parent)(childrens)
         mu=np.mean(diff_)
         sd=np.std(diff_)
@@ -91,7 +94,7 @@ def main(p:float,q:float,i:int):
     from Bio.Seq import Seq
     seq='atgcctaagtacctgccccctgacgccctcgtcgctctcatcaacaaggagttcggggccaacacgctcgtgcgcgcgaaggatgctgtcggcctcgtgaagccgcgcctgtctacaggttcctttgctctcgaccttcagctcggcggtggcttccccgaaggtgccatcactctgctcgaaggcgacaagggctcgtcaaagagctggaccatgaacaccatggccgcgatgttcctccagacgcacaagaacggtgtgttcatcctggtgaatgccgaaggcaccaacgaccacctgttcctcgaatcgctcggcgtcgataccgcgcgcaccttcttcctccagcccgagtcaggcgagcaggcctgggacgctgccatcaaagctgcgcagttcgctgagaaggtcttcatcggcgtcgattcgctcgatgcctgtgtgccgctcacggaacttgaaggagacgtgggcgatgccaagtacgcccctgccgccaagatgaacaacaagggcttccgcaagctcatctcggccatgaagcctgacctgaccagcacggatcagcgcgtcactgccgtgttcatcacccagctccgcgaagccatcggcgtcatgttcggtgatccgaagcgcagcgtcggtggcatgggcaaggcgttcgccgccatgaccatcatccgcctgtcgcgcatcaaggtgctgcgcaccgagggtgacaccgtcgctgaaaagaagagctacggcctggagatcgaggcgcacatcaccaagaacaagggatggggcgaaggcgaaaaggtgaagtggaccctctacaaagagaatcatgagggcttccgccgtggccagatcgacaacgtcaccgagctgattccgttcctgctcgtctacaagatcgcagacaagaagggtgcgtggatcaccctcggcaccgaccagtaccagggcgacaaggacctcgccgcccagctccgcatcaacgatgagctgcgggcgtggtgcatcgcccaggtgaaggaggcccacgccaagcgctacgagatgcaggaggaagtccctgccccgacgccgtccatcgtcaacaaaggcacctcggcgctgaagcgcctgcccaagaaaggcaagtaa'
     x=Simulation(p=p,q=q)
-    y=x.worker(seq_input=seq,each_gen=100,offspring=1000,gen_time=100,percent_mutation=1,percent_population=5)
+    y=x.worker(seq_input=seq,each_gen=100,offspring=1000,gen_time=100,percent_mutation=5,percent_population=5)
     results=pd.DataFrame.from_records(y)
     results.columns=[f'Gen_{i}' for i in results.columns]
     results.index=[f'org_{i}' for i in results.index]
