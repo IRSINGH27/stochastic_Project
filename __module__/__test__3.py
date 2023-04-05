@@ -6,11 +6,11 @@ def dnorm(x,mu,sd):
 class Simulation():
     def __init__(self,p=0.2,q=0.3) -> None:
         assert 1-(2*p)-q>=0, 'Sum of proability is not 1'
-        self.subsitute_dict={'a':{'a':1-(2*p)-q,'t':p,'g':q,'c':p},
-        't':{'a':p,'t':1-(2*p)-q,'g':p,'c':q},
-        'g':{'a':q,'t':p,'g':1-(2*p)-q,'c':p},
-        'c':{'a':p,'t':q,'g':p,'c':1-(2*p)-q}}
-        # self.indel={'insert':{'a':((1/3)/2)/4,'t':((1/3)/2)/4,'g':((1/3)/2)/4,'c':((1/3)/2)/4},'del':{'a':((1/3)/2)/4,'t':((1/3)/2)/4,'g':((1/3)/2)/4,'c':((1/3)/2)/4,},'None':2/3}
+        # self.subsitute_dict={'a':{'a':1-(2*p)-q,'t':p,'g':q,'c':p},
+        # 't':{'a':p,'t':1-(2*p)-q,'g':p,'c':q},
+        # 'g':{'a':q,'t':p,'g':1-(2*p)-q,'c':p},
+        # 'c':{'a':p,'t':q,'g':p,'c':1-(2*p)-q}}
+        self.indel={'insert':{'a':((1/3)/2)/4,'t':((1/3)/2)/4,'g':((1/3)/2)/4,'c':((1/3)/2)/4},'del':{'a':((1/3)/2)/4,'t':((1/3)/2)/4,'g':((1/3)/2)/4,'c':((1/3)/2)/4,},'None':2/3}
         self.np_round=np.vectorize(lambda x:round(x))
         self._nt_selector=np.vectorize(lambda x,y:x[y])
 
@@ -44,35 +44,17 @@ class Simulation():
             seq=np.array([list(seq)])[0]
             # mutation
             for i in range(len(_nt)):
-                sum_=0
-                _proability=np.array([],dtype=np.float32)
-                _mt=np.array([],dtype=str)
-                for j in self.subsitute_dict[_nt[i]].keys():
-                    if j!=_nt[i]:
-                        sum_=sum_+self.subsitute_dict[_nt[i]][j]
-                        _proability=np.append(_proability,self.subsitute_dict[_nt[i]][j])
-                        _mt=np.append(_mt,j)
-                    else:
-                        sum_2=self.subsitute_dict[_nt[i]][j]
                 np.random.seed()
+                t1=1/((1/3)/2)/4 * np.log(1/np.random.uniform(0,1))
                 np.random.seed()
-                t1=(1/(sum_))*np.log((1/np.random.rand()))
-                # t11=(1/(self.indel['insert']['a']*8))*np.log(1/np.random.rand())
-                t2=(1/sum_2)*np.log((1/np.random.rand()))
-                t_happen=min([t1,t2])
+                t2=1/((1/3)/2)/4 * np.log(1/np.random.uniform(0,1))
+                np.random.seed()
+                t3=1/(1/3) * np.log(1/np.random.uniform(0,1))                
+                t_happen=min([t1,t2,t3])
                 if t_happen==t1:
-                    _proability=_proability/_proability.sum()
-                    seq[pos[i]]=np.random.choice(_mt,p=_proability)
-                # if t_happen==t11:
-                #     event=np.random.choice(['insert','del'])
-                #     if event=='insert':
-                #         seq=np.insert(seq,pos[i],np.random.choice(tuple(self.indel[event].keys())))
-                #         pos+=1
-                #     elif event=='del':
-                #         seq=np.delete(seq,pos[i])
-                #         pos-=1
-                #     else:
-                #         continue    
+                    seq.insert(i,np.random.choice(['a','t','g','c']))
+                elif t_happen==t2:
+                    seq.pop(i)
                 else:
                     continue
             seq=''.join(seq)
@@ -89,7 +71,6 @@ class Simulation():
             p_=np.vectorize(dnorm)(diff_,0,1)
         p_=np.vectorize(lambda x:x/sum(p_))(p_)
         return p_
-
 def main(p:float,q:float,i:int):
     import pandas as pd
     from Bio.Seq import Seq
