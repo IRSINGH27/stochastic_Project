@@ -5,7 +5,8 @@ def dnorm(x,mu,sd):
     b=-1*((x-mu)**2)/(2*(sd**2))
     return a*np.exp(b)
 def len_seq(x):
-    x=Seq(x).translate()
+    x=Seq(x)
+    x=x.translate()
     x=x[0:x.find('*')]
     return len(x)
 class Simulation():
@@ -14,7 +15,7 @@ class Simulation():
         # 't':{'a':p,'t':1-(2*p)-q,'g':p,'c':q},
         # 'g':{'a':q,'t':p,'g':1-(2*p)-q,'c':p},
         # 'c':{'a':p,'t':q,'g':p,'c':1-(2*p)-q}}
-        self.indel={'insert':{'a':((1/3)/2)/4,'t':((1/3)/2)/4,'g':((1/3)/2)/4,'c':((1/3)/2)/4},'del':{'a':((1/3)/2)/4,'t':((1/3)/2)/4,'g':((1/3)/2)/4,'c':((1/3)/2)/4,},'None':2/3}
+        self.indel={'insert':1/6,'del':1/6,'None':2/3}
         self.np_round=np.vectorize(lambda x:round(x))
         self._nt_selector=np.vectorize(lambda x,y:x[y])
 
@@ -42,30 +43,30 @@ class Simulation():
         results=np.array([],dtype=object)
         for _ in range(offspring):
             seq=each_one[3:-3]
-            pos_number=round((percent_mutation/100)*len(seq))
+            # pos_number=round((percent_mutation/100)*len(seq))
+            pos_number=1
             np.random.seed()
             pos=self.np_round(np.random.uniform(size=pos_number,low=0,high=len(seq)-1))
             seq=np.array([list(seq)])[0]
             # mutation
             for i in range(len(pos)):
                 np.random.seed()
-                t1=1/(((1/3)/2)/4) * np.log(1/np.random.uniform(0,1))
+                t1=(1/self.indel['insert']) * np.log(1/np.random.uniform(0,1))
                 np.random.seed()
-                t2=1/(((1/3)/2)/4) * np.log(1/np.random.uniform(0,1))
+                t2=(1/self.indel['del']) * np.log(1/np.random.uniform(0,1))
                 np.random.seed()
-                t3=1/(1/3) * np.log(1/np.random.uniform(0,1))                
+                t3=(1/self.indel['None']) * np.log(1/np.random.uniform(0,1))                
                 t_happen=min([t1,t2,t3])
                 if t_happen==t1:
-                    seq=np.insert(seq,i,np.random.choice(['a','t','g','c']))
+                    seq=np.insert(seq,pos[i],np.random.choice(['a','t','g','c']))
                 elif t_happen==t2:
-                    seq=np.delete(seq,i)
+                    seq=np.delete(seq,pos[i])
                 else:
                     continue
             seq=''.join(seq)
             seq=each_one[0:3]+seq+each_one[-3:]
             results=np.append(results,seq)
         return results
-                    
     def fitness_function(self,childrens,len_parents):
         childs_len=np.vectorize(len_seq)(childrens)
         diff_=childs_len-len_parents
@@ -81,7 +82,7 @@ def main(i:int):
     from Bio.Seq import Seq
     seq='atgcctaagtacctgccccctgacgccctcgtcgctctcatcaacaaggagttcggggccaacacgctcgtgcgcgcgaaggatgctgtcggcctcgtgaagccgcgcctgtctacaggttcctttgctctcgaccttcagctcggcggtggcttccccgaaggtgccatcactctgctcgaaggcgacaagggctcgtcaaagagctggaccatgaacaccatggccgcgatgttcctccagacgcacaagaacggtgtgttcatcctggtgaatgccgaaggcaccaacgaccacctgttcctcgaatcgctcggcgtcgataccgcgcgcaccttcttcctccagcccgagtcaggcgagcaggcctgggacgctgccatcaaagctgcgcagttcgctgagaaggtcttcatcggcgtcgattcgctcgatgcctgtgtgccgctcacggaacttgaaggagacgtgggcgatgccaagtacgcccctgccgccaagatgaacaacaagggcttccgcaagctcatctcggccatgaagcctgacctgaccagcacggatcagcgcgtcactgccgtgttcatcacccagctccgcgaagccatcggcgtcatgttcggtgatccgaagcgcagcgtcggtggcatgggcaaggcgttcgccgccatgaccatcatccgcctgtcgcgcatcaaggtgctgcgcaccgagggtgacaccgtcgctgaaaagaagagctacggcctggagatcgaggcgcacatcaccaagaacaagggatggggcgaaggcgaaaaggtgaagtggaccctctacaaagagaatcatgagggcttccgccgtggccagatcgacaacgtcaccgagctgattccgttcctgctcgtctacaagatcgcagacaagaagggtgcgtggatcaccctcggcaccgaccagtaccagggcgacaaggacctcgccgcccagctccgcatcaacgatgagctgcgggcgtggtgcatcgcccaggtgaaggaggcccacgccaagcgctacgagatgcaggaggaagtccctgccccgacgccgtccatcgtcaacaaaggcacctcggcgctgaagcgcctgcccaagaaaggcaagtaa'
     x=Simulation()
-    y=x.worker(seq_input=seq,each_gen=10,offspring=100,gen_time=10,percent_mutation=1,percent_population=50)
+    y=x.worker(seq_input=seq,each_gen=100,offspring=1000,gen_time=100,percent_mutation=1,percent_population=10)
     results=pd.DataFrame.from_records(y)
     results.columns=[f'Gen_{i}' for i in results.columns]
     results.index=[f'org_{i}' for i in results.index]
@@ -93,3 +94,4 @@ def main(i:int):
     results.to_parquet(f'{i}.indel_result1.parquet')
     results_protein.to_parquet(f'{i}.indel_result_protein1.parquet')
     results2.to_parquet(f'{i}.indel_result21.parquet')
+    return None
